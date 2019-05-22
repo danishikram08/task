@@ -1,5 +1,55 @@
-module.exports = db => {
+const {encryptString} = require('../helpers/crypto');
+const jwtToken=require('../helpers/jwtToken');
+module.exports = (db) => {
     return {
+        register(req) {
+            return db.sequelize.transaction(transaction => {
+                const {
+                    password
+                } = req.body;
+
+                req.body.password = encryptString(password);
+                return db.User.create(req.body, {
+                        transaction: transaction
+                    })
+                    .then(transaction => {
+                        return {
+                            status: 201,
+                            data: transaction
+                        };
+                    })
+                    .catch(error => {
+                        return {
+                            status: 500,
+                            error: error
+                        };
+                    })
+            })
+        },
+        login(req) {
+            const {password} = req.body;
+            req.body.password = encryptString(password)
+            return db.User.findOne({
+                    where: {
+                        email: req.body.email,
+                        password: req.body.password
+                    }
+                })
+                .then(User => {
+                    User.token=jwtToken.jwtToken(User.id);
+                    return {
+                        status: 201,
+                        data: User
+                    }
+                })
+                .catch(error => {
+                    return {
+                        status: 500,
+                        error: error
+                    }
+                })
+        },
+
         create(req) {
             return db.User.create(req.body)
                 .then(User => {
@@ -8,7 +58,7 @@ module.exports = db => {
                         Images.UserId = User.id
                         Images.filePath = Images.path
                     })
-                        db.Image.bulkCreate(file, {
+                    db.Image.bulkCreate(file, {
                             returning: true
                         }).then(file => {
                             return {
@@ -48,10 +98,10 @@ module.exports = db => {
                 .then(users => {
                     const oldUrl = req.protocol + "://" + req.headers.host
 
-                    if(users){
+                    if (users) {
 
                         users.forEach(user => {
-                            if(user.Images.length) {
+                            if (user.Images.length) {
                                 user.Images.forEach(image => {
                                     image.filePath = oldUrl + '/' + image.filePath;
                                 });
@@ -88,6 +138,27 @@ module.exports = db => {
                         status: 500,
                         error: error
                     }
+                })
+        },
+        updateToken(req) {
+            return db.User.update({
+                    token: req.token
+                }, {
+                    where: {
+                        id: req.id
+                    }
+                })
+                .then(User => {
+                    return {
+                        status: 201,
+                        data: User
+                    };
+                })
+                .catch(error => {
+                    return {
+                        status: 500,
+                        error: error
+                    };
                 })
         },
         update(req) {

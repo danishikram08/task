@@ -10,6 +10,7 @@ const env = {
         min: 0,
         acquire: 3000,
         idle: 1000
-    }
+    },
+    secret: "wowwow"
 }
 module.exports = env;

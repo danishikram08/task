@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 module.exports = (sequelize, datatype) => {
     const User = sequelize.define('User', {
         id: {
@@ -10,8 +11,17 @@ module.exports = (sequelize, datatype) => {
         },
         email: {
             type: datatype.STRING
+        },
+        password: {
+            type: datatype.STRING
+        },
+
+        token: {
+            type: datatype.STRING,
+            allowNull: true
         }
-    })
+    });
+
     User.associate = (model) => {
         User.hasMany(model.Image);
     }
